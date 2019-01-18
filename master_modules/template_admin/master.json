@@ -14,7 +14,7 @@
     "angular-daterangepicker": "^0.2.2"
   },
   "npmDependencies": {
-    "fs-extra": "0.28.0"
+    "fs-extra": "7.0.1"
   },
   "bowerResolutions": {
     "angular": "1.5.5",
