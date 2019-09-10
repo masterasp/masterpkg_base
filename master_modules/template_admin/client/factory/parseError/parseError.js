@@ -5,13 +5,14 @@
 (function () {
     "use strict";
 
-    var mod = angular.module('parseError',[]);
+    var mod = angular.module('parseError', []);
 
     mod.factory('parseError', ['gettextCatalog', 'clientConfig', '$state', 'principal', function (gettextCatalog, clientConfig, $state, principal) {
 
         var contHistory = 0;
         var limitLI = 20;
-        function actHistory(item){
+
+        function actHistory(item) {
 
             var list = document.getElementById("actionHistory");
             var newItem = document.createElement("LI");
@@ -24,31 +25,31 @@
             var y = d.getFullYear();
 
             var html = '<div class="dropdown-messages-box">';
-                    html += '<a class="pull-left" href="'+item.link+'">';
-                        var classTxt = '';
-                        if(item.class=='success'){
-                            html += '<i class="fa fa-save pictoSuccess pictoImg" /></i>';
-                            classTxt = 'pictoSuccess';
-                        }else if(item.class=='error'){
-                            html += '<i class="fa fa-save pictoError pictoImg" /></i>';
-                            classTxt = 'pictoError';
-                        }else if(item.class=='info'){
-                            html += '<i class="fa fa-save pictoInfo pictoImg" /></i>';
-                            classTxt = 'pictoInfo';
-                        }
-                    html += '</a>';
-                html += '<div class="media-body '+classTxt+'">';
-                    html += '<a href="'+item.link+'">';
-                        html += '<strong>'+item.title+'</strong>';
-                    html += '</a>';
-                    html += '<br />';
-                    html += '<small class="text-muted3">'+h+':'+m+' - '+day+'.'+me+'.'+y+'</small>';
-                html += '</div>';
+            html += '<a class="pull-left" href="' + item.link + '">';
+            var classTxt = '';
+            if (item.class == 'success') {
+                html += '<i class="fa fa-save pictoSuccess pictoImg" /></i>';
+                classTxt = 'pictoSuccess';
+            } else if (item.class == 'error') {
+                html += '<i class="fa fa-save pictoError pictoImg" /></i>';
+                classTxt = 'pictoError';
+            } else if (item.class == 'info') {
+                html += '<i class="fa fa-save pictoInfo pictoImg" /></i>';
+                classTxt = 'pictoInfo';
+            }
+            html += '</a>';
+            html += '<div class="media-body ' + classTxt + '">';
+            html += '<a href="' + item.link + '">';
+            html += '<strong>' + item.title + '</strong>';
+            html += '</a>';
+            html += '<br />';
+            html += '<small class="text-muted3">' + h + ':' + m + ' - ' + day + '.' + me + '.' + y + '</small>';
+            html += '</div>';
             html += '</div>';
             html += '<div class="divider">&nbsp;</div>';
 
             newItem.innerHTML = html;
-            if(contHistory>=limitLI){
+            if (contHistory >= limitLI) {
                 // eliminar ultimo
                 $('#actionHistory').children().last().remove();
                 contHistory--;
@@ -59,12 +60,12 @@
 
         return {
             view: function (error) {
-                if(error.status && error.status == -1){
+                if (error.status && error.status == -1) {
                     sweetAlert('503', gettextCatalog.getString('The service is unavailable'), "error");
-                }else if (error.status == 403) {
-                    if(principal.isAuthenticated()){
+                } else if (error.status == 403) {
+                    if (principal.isAuthenticated()) {
                         $state.go('forbiden');
-                    }else{
+                    } else {
                         $state.go('login');
                     }
                 } else if (error.status == 408) {
@@ -79,16 +80,16 @@
                     } else {
                         messageError = gettextCatalog.getString('Generic error');
                     }
-                    if(principal.isAuthenticated()) {
+                    if (principal.isAuthenticated()) {
                         sweetAlert(titleError, messageError, "error");
                     }
                 }
                 return;
             },
-            delete: function(message, cb, dismiss){
+            delete: function (message, cb, dismiss) {
                 swal({
                     title: gettextCatalog.getString("Are you sure?"),
-                    text: message,
+                    html: message,
                     type: "warning",
                     confirmButtonColor: "#DD6B55",
                     confirmButtonText: gettextCatalog.getString("Yes, delete it!"),
@@ -96,7 +97,7 @@
                     showLoaderOnConfirm: true
                 }).then(cb, dismiss);
             },
-            goBack: function(message, cb, dismiss){
+            goBack: function (message, cb, dismiss) {
                 swal({
                     title: gettextCatalog.getString("Are you sure?"),
                     text: message,
@@ -105,7 +106,10 @@
                     confirmButtonText: gettextCatalog.getString("Yes, go back!"),
                     showCancelButton: true,
                     showLoaderOnConfirm: true
-                }).then(function(){cb(); swal.close(); }, dismiss);
+                }).then(function () {
+                    cb();
+                    swal.close();
+                }, dismiss);
             },
             deleteSuccess: function (message) {
                 if (!message) {
@@ -114,14 +118,14 @@
                 swal(gettextCatalog.getString("Deleted!"), message, "success");
                 return;
             },
-            ntfyInfo: function(msg, link){
+            ntfyInfo: function (msg, link) {
                 actHistory({
                     title: msg,
                     class: 'success',
                     link: link,
                 });
             },
-            saveOk: function(msg, link, cb){
+            saveOk: function (msg, link, cb) {
                 actHistory({
                     title: msg,
                     class: 'success',
@@ -143,7 +147,7 @@
                 });
                 toastr.options.onclick = cb;
             },
-            saveKo: function(msg, link, cb){
+            saveKo: function (msg, link, cb) {
                 actHistory({
                     title: msg,
                     class: 'error',
@@ -165,26 +169,28 @@
                 });
                 toastr.options.onclick = cb;
             },
-            deleteError: function(err){
+            deleteError: function (err) {
                 var html = '';
                 if (err.data && err.data.message) {
-                    html += '<p>'+err.data.message+'</p>';
+                    html += '<div>' + err.data.message + '</div>';
+                } else if (err.message) {
+                    html += '<div>' + err.message + '</div>';
+                } else if (err.errorMsg) {
+                    html += '<div>' + err.errorMsg + '</div>';
                 }
 
                 html += '<div class="dBug">';
-                    html += '<input type="checkbox" name="toggle" id="toggle"/>';
-                    html += '<label for="toggle"></label>';
-                    html += '<div class="dBugBody"><pre>';
-                        html += JSON.stringify(err.data, null, 2);
-                    html += '</pre></div>';
+                html += '<input type="checkbox" name="toggle" id="toggle"/>';
+                html += '<label for="toggle"></label>';
+                html += '<div class="dBugBody"><pre>';
+                html += JSON.stringify(err.data, null, 2);
+                html += '</pre></div>';
                 html += '</div>';
-
                 swal({
                     title: gettextCatalog.getString("Error deleting"),
                     type: "error",
-                    text: html,
                     allowOutsideClick: false,
-                    html: true
+                    html: html
                 });
                 return;
             }
