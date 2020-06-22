@@ -2,22 +2,32 @@
 /*global __top, __mods */
 "use strict";
 
+const passport = require('passport');
+const winston = require('winston');
+const winstonDailyRotateFile = require('winston-daily-rotate-file');
+const fs = require('fs');
+const _ = require('lodash');
+const http = require('http');
+const express = require('express');
+const session = require('express-session');
+const morgan = require('morgan');
+const bodyParser = require('body-parser');
+const SSSession = require('./syncorm_session_storage.js');
+const MSSession = require('./memory_session_storage.js');
+const path = require("path");
+
 exports.init = function () {
 
-    var passport = require('passport');
+    const config = __mods.config;
 
-    var config = __mods.config;
-    var winston = require('winston');
-    var winstonDailyRotateFile = require('winston-daily-rotate-file');
-    var fs = require('fs');
-    var _ = require('underscore');
-
-    var loggerConfig = {
+    const loggerConfig = {
         transports: [],
         exitOnError: (config.winston && config.winston.exitOnError) ? config.winston.exitOnError : false
     };
 
-    if (!fs.existsSync('logs')) fs.mkdirSync('logs');
+    if (!fs.existsSync('logs')) {
+        fs.mkdirSync('logs');
+    }
 
     loggerConfig.transports.push(new winstonDailyRotateFile({
         filename: (config.winston && config.winston.filename) ? config.winston.filename : "logs/output.log",
@@ -35,7 +45,7 @@ exports.init = function () {
         humanReadableUnhandledException: true
     }));
 
-    var logger = new winston.Logger(loggerConfig);
+    const logger = new winston.Logger(loggerConfig);
 
     if ((config.winston) && (config.winston.exitOnAllError)) {
         logger.on('logging', function (transport, level, msg, meta) {
@@ -51,19 +61,8 @@ exports.init = function () {
 
     __mods.logger = logger;
 
-    var http = require('http');
-    var express = require('express');
-    var session = require('express-session');
-    var morgan = require('morgan');
-    var bodyParser = require('body-parser');
-    var SSSession = require('./syncorm_session_storage.js');
-
-    var path = require("path");
-    var fs = require("fs");
-
     var db = __mods.db = require('./db');
     global.MasterError = require('../common/mastererror');
-
 
     var app = __mods.app = express();
 
@@ -93,12 +92,11 @@ exports.init = function () {
     db.on('init', function () {
 
         if (config.winston && config.winston.mySqlLevel) {
-            var tmpTransporter = require('./winston_mysql_transport.js').Mysql;
-            var dataBaseOptions = {
+            require('./winston_mysql_transport.js').Mysql;
+            logger.add(winston.transports.Mysql, {
                 connection: db.$driver.pool,
                 level: config.winston.mySqlLevel
-            };
-            logger.add(winston.transports.Mysql, dataBaseOptions);
+            });
         }
 
         app.set('port', config.port || 3000);
@@ -133,12 +131,14 @@ exports.init = function () {
             app.use(morgan("dev"));
         }
 
+        const sessionStorage = config.database.useSyncormSessionStorage ? new SSSession(db) : new MSSession(db);
+
         app.use(session({
             secret: config.sessionSecret,
             proxy: true,
             resave: true,
             saveUninitialized: true,
-            store: new SSSession(db)
+            store: sessionStorage
         }));
 
         if (config.requestTimeout !== false) {
@@ -278,9 +278,8 @@ exports.init = function () {
             }
 
 
-
             var errObj = {};
-            if(typeof err == "string") {
+            if (typeof err == "string") {
                 errObj.code = "Undefined";
                 errObj.message = err;
             } else if (err.code) {
@@ -300,8 +299,17 @@ exports.init = function () {
                 errObj.errorMsg = err.message;
             }
 
-            if (err.stack) errObj.stack = err.stack;
+            if (err.stack) {
+                errObj.stack = err.stack;
+            }
+
+            if (errObj.code === 'security.accessDenied') {
+                delete errObj.stack;
+                errObj.url = req.url;
+            }
+
             logger.log("warn", errObj.code, errObj);
+
             delete errObj.stack;
 
             if (err.code === "security.accessDenied" || err.errorCode === "security.accessDenied") {

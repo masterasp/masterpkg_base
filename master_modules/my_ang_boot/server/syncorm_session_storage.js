@@ -1,9 +1,9 @@
 /*jslint node: true */
 "use strict";
 
-var session = require('express-session');
+const session = require('express-session');
 
-var SSStorage = function(db) {
+const SSStorage = function(db) {
     this.db = db;
 };
 
