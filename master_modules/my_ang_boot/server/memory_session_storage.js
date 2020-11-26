@@ -5,7 +5,9 @@ const session = require('express-session');
 
 const MSStorage = function (db) {
     this.db = db;
-    db.memorySessions = {};
+    if (db.memorySessions == null) {
+        db.memorySessions = {};
+    }
 };
 
 MSStorage.prototype.__proto__ = session.Store.prototype;
