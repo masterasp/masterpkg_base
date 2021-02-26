@@ -2,17 +2,19 @@
 /* global __mods */
 "use strict";
 
-var fs = require("fs-extra");
-
-
-var config = __mods.config;
+const fs = require("fs-extra");
 
 exports.init = function () {
+
+    const config = __mods.config;
+
+    const rootPath = process.cwd();
+
     if (config.clientConfig.logo) {
         fs.stat(config.clientConfig.logo, function (err, stat) {
             if (err == null) {
-                var inStr = fs.createReadStream(config.clientConfig.property.logo);
-                var outStr = fs.createWriteStream("/git/masterweb/dist/images/logo_blanc.png");
+                const inStr = fs.createReadStream(config.clientConfig.property.logo);
+                const outStr = fs.createWriteStream(rootPath + "/dist/images/logo_blanc.png");
                 inStr.pipe(outStr);
             } else {
                 console.warn((config.clientConfig.property.logo) + " not exists!");
