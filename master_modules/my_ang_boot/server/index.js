@@ -91,14 +91,6 @@ exports.init = function () {
 
     db.on('init', function () {
 
-        if (config.winston && config.winston.mySqlLevel) {
-            require('./winston_mysql_transport.js').Mysql;
-            logger.add(winston.transports.Mysql, {
-                connection: db.$driver.pool,
-                level: config.winston.mySqlLevel
-            });
-        }
-
         app.set('port', config.port || 3000);
 
         app.use(express.static(path.join(__top, 'dist')));
